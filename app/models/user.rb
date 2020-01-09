@@ -1,13 +1,9 @@
 require 'openssl'
 
-# Проверка формата электронной почты пользователя
-# Проверка максимальной длины юзернейма пользователя (не больше 40 символов)
-# Проверка формата юзернейма пользователя (только латинские буквы, цифры, и знак _)
-
 class User < ApplicationRecord
   ITERATIONS = 20_000
   DIGEST = OpenSSL::Digest::SHA256.new
-  EMAIL_PATTERN = /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z]+)*\.[a-z]+\z/i
+  USERNAME_PATTERN = /[a-zA-Z0-9\\_\\"]+$/.freeze
 
   attr_accessor :password, :email
 
@@ -15,20 +11,12 @@ class User < ApplicationRecord
 
   validates :email, :username, presence: true
   validates :email, :username, uniqueness: true
+  validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
+  validates :username, length: { maximum: 40 }, format: { with: USERNAME_PATTERN }
 
-  validates_presence_of :password, on: create
-  validates_confirmation_of :password
+  validates :password, presence: true, confirmation: true, on: create
 
-  before_validation :verify_email
   before_save :encrypt_password
-
-  def verify_email
-    if self.email =~ EMAIL_PATTERN
-      self.email = email
-    else
-      self.email = nil
-    end
-  end
 
   def encrypt_password
     if self.password.present?
