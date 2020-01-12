@@ -5,7 +5,7 @@ class User < ApplicationRecord
   DIGEST = OpenSSL::Digest::SHA256.new
   USERNAME_PATTERN = /\A\w+\z/.freeze
 
-  attr_accessor :password, :username
+  attr_accessor :password
 
   has_many :questions
 
@@ -14,7 +14,7 @@ class User < ApplicationRecord
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
 
   validates :username, length: { maximum: 40 }, format: { with: USERNAME_PATTERN }
-  before_save :username_downcase
+  before_validation :username_downcase
 
   validates :password, presence: true, confirmation: true, on: :create
   before_save :encrypt_password
