@@ -3,20 +3,25 @@ require 'openssl'
 class User < ApplicationRecord
   ITERATIONS = 20_000
   DIGEST = OpenSSL::Digest::SHA256.new
-  USERNAME_PATTERN = /[a-zA-Z0-9\\_\\"]+$/.freeze
+  USERNAME_PATTERN = /\A\w+\z/.freeze
 
-  attr_accessor :password, :email
+  attr_accessor :password, :username
 
   has_many :questions
 
   validates :email, :username, presence: true
   validates :email, :username, uniqueness: true
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
+
   validates :username, length: { maximum: 40 }, format: { with: USERNAME_PATTERN }
+  before_save :username_downcase
 
-  validates :password, presence: true, confirmation: true, on: create
-
+  validates :password, presence: true, confirmation: true, on: :create
   before_save :encrypt_password
+
+  def username_downcase
+    self.username = username.downcase
+  end
 
   def encrypt_password
     if self.password.present?
