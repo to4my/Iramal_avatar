@@ -9,34 +9,15 @@ class User < ApplicationRecord
 
   has_many :questions
 
-  validates :email, :username, presence: true
-  validates :email, :username, uniqueness: true
+  validates :email, :username, presence: true, uniqueness: true
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
 
   validates :username, length: { maximum: 40 }, format: { with: USERNAME_PATTERN }
-  before_validation :username_downcase
-
   validates :password, presence: true, confirmation: true, on: :create
+
+  before_validation :email_downcase
+  before_validation :username_downcase
   before_save :encrypt_password
-
-  def username_downcase
-    self.username = username.downcase
-  end
-
-  def encrypt_password
-    if self.password.present?
-      self.password_salt = User.hash_to_string(OpenSSL::Random.random_bytes(16))
-      self.password_hash = User.hash_to_string(
-        OpenSSL::PKCS5.pbkdf2_hmac(
-          self.password, self.password_salt, ITERATIONS, DIGEST.length, DIGEST
-        )
-      )
-    end
-  end
-
-  def self.hash_to_string(password_hash)
-    password_hash.unpack('H*')[0]
-  end
 
   def self.authenticate(email, password)
     user = find_by(email: email)
@@ -51,5 +32,28 @@ class User < ApplicationRecord
     else
       nil
     end
+  end
+
+  def self.hash_to_string(password_hash)
+    password_hash.unpack('H*')[0]
+  end
+
+  def encrypt_password
+    if self.password.present?
+      self.password_salt = User.hash_to_string(OpenSSL::Random.random_bytes(16))
+      self.password_hash = User.hash_to_string(
+        OpenSSL::PKCS5.pbkdf2_hmac(
+          self.password, self.password_salt, ITERATIONS, DIGEST.length, DIGEST
+        )
+      )
+    end
+  end
+
+  def email_downcase
+    self.email&.downcase!
+  end
+
+  def username_downcase
+    self.username&.downcase!
   end
 end
