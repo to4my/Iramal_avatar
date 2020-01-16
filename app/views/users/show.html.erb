@@ -1,3 +1,7 @@
-<h1>
-  <%= @hello %>
-</h1>
+<h1><%= @user.name %></h1>
+
+<div>
+  <%= image_tag user_avatar(@user), alt: '[Фото]' %>
+</div>
+
+<h2>@<%= @user.username %></h2>
